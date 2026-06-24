@@ -1,0 +1,98 @@
+package com.value.slmbridge.service;
+
+import com.value.slmbridge.client.FastApiClient;
+import com.value.slmbridge.dto.ModelTextRequest;
+import com.value.slmbridge.dto.QuestionRequest;
+import com.value.slmbridge.dto.TextRequest;
+import com.value.slmbridge.entity.AnalysisResult;
+import com.value.slmbridge.repository.AnalysisResultRepository;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.web.multipart.MultipartFile;
+
+@Service
+public class AnalysisService {
+
+    private final FastApiClient fastApiClient;
+    private final AnalysisResultRepository repository;
+
+    public AnalysisService(
+            FastApiClient fastApiClient,
+            AnalysisResultRepository repository
+    ) {
+        this.fastApiClient = fastApiClient;
+        this.repository = repository;
+    }
+
+    public AnalysisResult classify(ModelTextRequest request) {
+        Map<String, Object> result = fastApiClient.classify(request);
+        return save("classification", request.getModel(), request.getText(), null, result);
+    }
+
+    public AnalysisResult summarize(TextRequest request) {
+        Map<String, Object> result = fastApiClient.summarize(request);
+        return save("summarization", "mistral", request.getText(), null, result);
+    }
+
+    public AnalysisResult extract(TextRequest request) {
+        Map<String, Object> result = fastApiClient.extract(request);
+        return save("extraction", "mistral", request.getText(), null, result);
+    }
+
+    public AnalysisResult financialExtract(ModelTextRequest request) {
+        Map<String, Object> result = fastApiClient.financialExtract(request);
+        return save("financial_extraction", request.getModel(), request.getText(), null, result);
+    }
+
+    public AnalysisResult askDocument(QuestionRequest request) {
+        Map<String, Object> result = fastApiClient.askDocument(request);
+        return save("rag_qa", request.getModel(), request.getQuestion(), null, result);
+    }
+
+    public Map<String, Object> ragStatus() {
+        return fastApiClient.ragStatus();
+    }
+
+    public List<AnalysisResult> getHistory() {
+        return repository.findAll();
+    }
+
+    public List<AnalysisResult> getHistoryByType(String type) {
+        return repository.findByAnalysisTypeOrderByCreatedAtDesc(type);
+    }
+
+    private AnalysisResult save(
+            String analysisType,
+            String model,
+            String inputText,
+            String filename,
+            Map<String, Object> result
+    ) {
+        AnalysisResult analysisResult = new AnalysisResult();
+
+        analysisResult.setAnalysisType(analysisType);
+        analysisResult.setModel(model);
+        analysisResult.setInputText(inputText);
+        analysisResult.setFilename(filename);
+        analysisResult.setResult(result);
+        analysisResult.setCreatedAt(LocalDateTime.now());
+
+        return repository.save(analysisResult);
+    }
+
+    public AnalysisResult financialPdfChunked(MultipartFile file) {
+        Map<String, Object> result = fastApiClient.financialPdfChunked(file);
+
+        return save(
+                "financial_pdf_chunked",
+                "mistral",
+                null,
+                file.getOriginalFilename(),
+                result
+        );
+    }
+}
