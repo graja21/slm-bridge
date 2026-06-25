@@ -18,6 +18,7 @@ public class AnalysisResult {
     private String filename;
     private Map<String, Object> result;
     private LocalDateTime createdAt;
+    private String userEmail;
 
     public AnalysisResult() {
     }
@@ -72,5 +73,12 @@ public class AnalysisResult {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+    public String getUserEmail() {
+        return userEmail;
+    }
+
+    public void setUserEmail(String userEmail) {
+        this.userEmail = userEmail;
     }
 }

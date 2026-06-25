@@ -6,12 +6,14 @@ import com.value.slmbridge.dto.TextRequest;
 import com.value.slmbridge.entity.AnalysisResult;
 import com.value.slmbridge.service.AnalysisService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.Map;
-
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/analysis")
@@ -25,23 +27,51 @@ public class AnalysisController {
     }
 
     @PostMapping("/classify")
-    public AnalysisResult classify(@Valid @RequestBody ModelTextRequest request) {
-        return analysisService.classify(request);
+    public AnalysisResult classify(
+            @Valid @RequestBody ModelTextRequest request,
+            Authentication authentication
+    ) {
+        return analysisService.classify(request, authentication.getName());
     }
 
     @PostMapping("/summarize")
-    public AnalysisResult summarize(@Valid @RequestBody TextRequest request) {
-        return analysisService.summarize(request);
+    public AnalysisResult summarize(
+            @Valid @RequestBody TextRequest request,
+            Authentication authentication
+    ) {
+        return analysisService.summarize(request, authentication.getName());
     }
 
     @PostMapping("/extract")
-    public AnalysisResult extract(@Valid @RequestBody TextRequest request) {
-        return analysisService.extract(request);
+    public AnalysisResult extract(
+            @Valid @RequestBody TextRequest request,
+            Authentication authentication
+    ) {
+        return analysisService.extract(request, authentication.getName());
     }
 
     @PostMapping("/financial-extract")
-    public AnalysisResult financialExtract(@Valid @RequestBody ModelTextRequest request) {
-        return analysisService.financialExtract(request);
+    public AnalysisResult financialExtract(
+            @Valid @RequestBody ModelTextRequest request,
+            Authentication authentication
+    ) {
+        return analysisService.financialExtract(request, authentication.getName());
+    }
+
+    @PostMapping("/ask-document")
+    public AnalysisResult askDocument(
+            @Valid @RequestBody QuestionRequest request,
+            Authentication authentication
+    ) {
+        return analysisService.askDocument(request, authentication.getName());
+    }
+
+    @PostMapping(value = "/financial-pdf-chunked", consumes = "multipart/form-data")
+    public AnalysisResult financialPdfChunked(
+            @RequestPart("file") MultipartFile file,
+            Authentication authentication
+    ) {
+        return analysisService.financialPdfChunked(file, authentication.getName());
     }
 
     @GetMapping("/rag-status")
@@ -49,29 +79,31 @@ public class AnalysisController {
         return analysisService.ragStatus();
     }
 
-    @PostMapping("/ask-document")
-    public AnalysisResult askDocument(@Valid @RequestBody QuestionRequest request) {
-        return analysisService.askDocument(request);
-    }
-
     @GetMapping("/history")
-    public List<AnalysisResult> history() {
-        return analysisService.getHistory();
-    }
+    public Page<AnalysisResult> history(
+            Authentication authentication,
+            @RequestParam(required = false) String analysisType,
+            @RequestParam(required = false) String model,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
 
-    @GetMapping("/history/{type}")
-    public List<AnalysisResult> historyByType(@PathVariable String type) {
-        return analysisService.getHistoryByType(type);
-    }
-
-    @PostMapping(value = "/financial-pdf-chunked", consumes = "multipart/form-data")
-    public AnalysisResult financialPdfChunked(@RequestPart("file") MultipartFile file) {
-        return analysisService.financialPdfChunked(file);
+        return analysisService.getHistory(
+                authentication.getName(),
+                analysisType,
+                model,
+                pageable
+        );
     }
 
     @DeleteMapping("/history/{id}")
     public Map<String, String> deleteHistory(@PathVariable String id) {
         analysisService.deleteAnalysis(id);
-        return Map.of("message", "Analysis deleted successfully");
+
+        return Map.of(
+                "message",
+                "Analysis deleted successfully"
+        );
     }
 }
