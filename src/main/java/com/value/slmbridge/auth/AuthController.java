@@ -27,4 +27,20 @@ public class AuthController {
     public UserProfileResponse me(Authentication authentication) {
         return authService.getCurrentUser(authentication.getName());
     }
+
+    @PutMapping("/me")
+    public UserProfileResponse updateProfile(
+            Authentication authentication,
+            @Valid @RequestBody UpdateProfileRequest request
+    ) {
+        return authService.updateProfile(authentication.getName(), request);
+    }
+
+    @PutMapping("/change-password")
+    public String changePassword(
+            Authentication authentication,
+            @Valid @RequestBody ChangePasswordRequest request
+    ) {
+        return authService.changePassword(authentication.getName(), request);
+    }
 }

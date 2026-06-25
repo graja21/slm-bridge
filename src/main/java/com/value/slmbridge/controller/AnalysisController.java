@@ -68,4 +68,10 @@ public class AnalysisController {
     public AnalysisResult financialPdfChunked(@RequestPart("file") MultipartFile file) {
         return analysisService.financialPdfChunked(file);
     }
+
+    @DeleteMapping("/history/{id}")
+    public Map<String, String> deleteHistory(@PathVariable String id) {
+        analysisService.deleteAnalysis(id);
+        return Map.of("message", "Analysis deleted successfully");
+    }
 }

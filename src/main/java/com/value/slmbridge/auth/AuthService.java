@@ -90,4 +90,32 @@ public class AuthService {
                 user.getRole().name()
         );
     }
+
+    public UserProfileResponse updateProfile(String email, UpdateProfileRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setFullName(request.getFullName());
+        userRepository.save(user);
+
+        return new UserProfileResponse(
+                user.getFullName(),
+                user.getEmail(),
+                user.getRole().name()
+        );
+    }
+
+    public String changePassword(String email, ChangePasswordRequest request) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new RuntimeException("Current password is incorrect");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        return "Password changed successfully";
+    }
 }

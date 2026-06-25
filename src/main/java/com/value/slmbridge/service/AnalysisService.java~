@@ -83,4 +83,16 @@ public class AnalysisService {
 
         return repository.save(analysisResult);
     }
+
+    public AnalysisResult financialPdfChunked(MultipartFile file) {
+        Map<String, Object> result = fastApiClient.financialPdfChunked(file);
+
+        return save(
+                "financial_pdf_chunked",
+                "mistral",
+                null,
+                file.getOriginalFilename(),
+                result
+        );
+    }
 }

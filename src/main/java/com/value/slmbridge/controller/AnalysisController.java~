@@ -64,8 +64,8 @@ public class AnalysisController {
         return analysisService.getHistoryByType(type);
     }
 
-    @PostMapping("/financial-pdf-chunked")
-    public AnalysisResult financialPdfChunked(@RequestParam("file") MultipartFile file) {
+    @PostMapping(value = "/financial-pdf-chunked", consumes = "multipart/form-data")
+    public AnalysisResult financialPdfChunked(@RequestPart("file") MultipartFile file) {
         return analysisService.financialPdfChunked(file);
     }
 }

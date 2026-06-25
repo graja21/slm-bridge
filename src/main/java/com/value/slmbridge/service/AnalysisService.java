@@ -95,4 +95,8 @@ public class AnalysisService {
                 result
         );
     }
+
+    public void deleteAnalysis(String id) {
+        repository.deleteById(id);
+    }
 }
