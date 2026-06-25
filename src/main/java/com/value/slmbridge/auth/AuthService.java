@@ -80,4 +80,14 @@ public class AuthService {
                 user.getRole().name()
         );
     }
+    public UserProfileResponse getCurrentUser(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return new UserProfileResponse(
+                user.getFullName(),
+                user.getEmail(),
+                user.getRole().name()
+        );
+    }
 }

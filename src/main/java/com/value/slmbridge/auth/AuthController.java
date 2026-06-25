@@ -1,5 +1,5 @@
 package com.value.slmbridge.auth;
-
+import org.springframework.security.core.Authentication;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,5 +22,9 @@ public class AuthController {
     @PostMapping("/login")
     public AuthResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
+    }
+    @GetMapping("/me")
+    public UserProfileResponse me(Authentication authentication) {
+        return authService.getCurrentUser(authentication.getName());
     }
 }
