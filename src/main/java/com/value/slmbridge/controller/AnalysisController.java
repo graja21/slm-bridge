@@ -1,5 +1,6 @@
 package com.value.slmbridge.controller;
 
+import com.value.slmbridge.dto.AnalysisResultResponse;
 import com.value.slmbridge.dto.ModelTextRequest;
 import com.value.slmbridge.dto.QuestionRequest;
 import com.value.slmbridge.dto.TextRequest;
@@ -27,51 +28,63 @@ public class AnalysisController {
     }
 
     @PostMapping("/classify")
-    public AnalysisResult classify(
+    public AnalysisResultResponse classify(
             @Valid @RequestBody ModelTextRequest request,
             Authentication authentication
     ) {
-        return analysisService.classify(request, authentication.getName());
+        return toResponse(
+                analysisService.classify(request, authentication.getName())
+        );
     }
 
     @PostMapping("/summarize")
-    public AnalysisResult summarize(
+    public AnalysisResultResponse summarize(
             @Valid @RequestBody TextRequest request,
             Authentication authentication
     ) {
-        return analysisService.summarize(request, authentication.getName());
+        return toResponse(
+                analysisService.summarize(request, authentication.getName())
+        );
     }
 
     @PostMapping("/extract")
-    public AnalysisResult extract(
+    public AnalysisResultResponse extract(
             @Valid @RequestBody TextRequest request,
             Authentication authentication
     ) {
-        return analysisService.extract(request, authentication.getName());
+        return toResponse(
+                analysisService.extract(request, authentication.getName())
+        );
     }
 
     @PostMapping("/financial-extract")
-    public AnalysisResult financialExtract(
+    public AnalysisResultResponse financialExtract(
             @Valid @RequestBody ModelTextRequest request,
             Authentication authentication
     ) {
-        return analysisService.financialExtract(request, authentication.getName());
+        return toResponse(
+                analysisService.financialExtract(request, authentication.getName())
+        );
     }
 
     @PostMapping("/ask-document")
-    public AnalysisResult askDocument(
+    public AnalysisResultResponse askDocument(
             @Valid @RequestBody QuestionRequest request,
             Authentication authentication
     ) {
-        return analysisService.askDocument(request, authentication.getName());
+        return toResponse(
+                analysisService.askDocument(request, authentication.getName())
+        );
     }
 
     @PostMapping(value = "/financial-pdf-chunked", consumes = "multipart/form-data")
-    public AnalysisResult financialPdfChunked(
+    public AnalysisResultResponse financialPdfChunked(
             @RequestPart("file") MultipartFile file,
             Authentication authentication
     ) {
-        return analysisService.financialPdfChunked(file, authentication.getName());
+        return toResponse(
+                analysisService.financialPdfChunked(file, authentication.getName())
+        );
     }
 
     @GetMapping("/rag-status")
@@ -80,7 +93,7 @@ public class AnalysisController {
     }
 
     @GetMapping("/history")
-    public Page<AnalysisResult> history(
+    public Page<AnalysisResultResponse> history(
             Authentication authentication,
             @RequestParam(required = false) String analysisType,
             @RequestParam(required = false) String model,
@@ -94,7 +107,7 @@ public class AnalysisController {
                 analysisType,
                 model,
                 pageable
-        );
+        ).map(this::toResponse);
     }
 
     @DeleteMapping("/history/{id}")
@@ -104,6 +117,18 @@ public class AnalysisController {
         return Map.of(
                 "message",
                 "Analysis deleted successfully"
+        );
+    }
+
+    private AnalysisResultResponse toResponse(AnalysisResult analysisResult) {
+        return new AnalysisResultResponse(
+                analysisResult.getId(),
+                analysisResult.getAnalysisType(),
+                analysisResult.getModel(),
+                analysisResult.getInputText(),
+                analysisResult.getFilename(),
+                analysisResult.getResult(),
+                analysisResult.getCreatedAt()
         );
     }
 }
