@@ -1,135 +1,222 @@
-package com.value.slmbridge.service;
+    package com.value.slmbridge.service;
 
-import com.value.slmbridge.client.FastApiClient;
-import com.value.slmbridge.dto.ModelTextRequest;
-import com.value.slmbridge.dto.QuestionRequest;
-import com.value.slmbridge.dto.TextRequest;
-import com.value.slmbridge.entity.AnalysisResult;
-import com.value.slmbridge.repository.AnalysisResultRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
+    import org.slf4j.Logger;
+    import org.slf4j.LoggerFactory;
 
-import java.time.LocalDateTime;
-import java.util.Map;
+    import com.value.slmbridge.client.FastApiClient;
+    import com.value.slmbridge.dto.ModelTextRequest;
+    import com.value.slmbridge.dto.QuestionRequest;
+    import com.value.slmbridge.dto.TextRequest;
+    import com.value.slmbridge.entity.AnalysisResult;
+    import com.value.slmbridge.repository.AnalysisResultRepository;
+    import org.springframework.data.domain.Page;
+    import org.springframework.data.domain.Pageable;
+    import org.springframework.stereotype.Service;
+    import org.springframework.web.multipart.MultipartFile;
 
-@Service
-public class AnalysisService {
+    import java.time.LocalDateTime;
+    import java.util.Map;
 
-    private final FastApiClient fastApiClient;
-    private final AnalysisResultRepository repository;
+    @Service
 
-    public AnalysisService(
-            FastApiClient fastApiClient,
-            AnalysisResultRepository repository
-    ) {
-        this.fastApiClient = fastApiClient;
-        this.repository = repository;
-    }
 
-    public AnalysisResult classify(ModelTextRequest request, String userEmail) {
-        Map<String, Object> result = fastApiClient.classify(request);
-        return save("classification", request.getModel(), request.getText(), null, userEmail, result);
-    }
+    public class AnalysisService {
 
-    public AnalysisResult summarize(TextRequest request, String userEmail) {
-        Map<String, Object> result = fastApiClient.summarize(request);
-        return save("summarization", "mistral", request.getText(), null, userEmail, result);
-    }
+        private static final Logger log =
+                LoggerFactory.getLogger(AnalysisService.class);
 
-    public AnalysisResult extract(TextRequest request, String userEmail) {
-        Map<String, Object> result = fastApiClient.extract(request);
-        return save("extraction", "mistral", request.getText(), null, userEmail, result);
-    }
+        private final FastApiClient fastApiClient;
+        private final AnalysisResultRepository repository;
 
-    public AnalysisResult financialExtract(ModelTextRequest request, String userEmail) {
-        Map<String, Object> result = fastApiClient.financialExtract(request);
-        return save("financial_extraction", request.getModel(), request.getText(), null, userEmail, result);
-    }
+        public AnalysisService(
+                FastApiClient fastApiClient,
+                AnalysisResultRepository repository
+        ) {
+            this.fastApiClient = fastApiClient;
+            this.repository = repository;
+        }
 
-    public AnalysisResult askDocument(QuestionRequest request, String userEmail) {
-        Map<String, Object> result = fastApiClient.askDocument(request);
-        return save("rag_qa", request.getModel(), request.getQuestion(), null, userEmail, result);
-    }
+        public AnalysisResult classify(ModelTextRequest request, String userEmail) {
 
-    public AnalysisResult financialPdfChunked(MultipartFile file, String userEmail) {
-        Map<String, Object> result = fastApiClient.financialPdfChunked(file);
+            log.info("User {} requested classification using {}", userEmail, request.getModel());
 
-        return save(
-                "financial_pdf_chunked",
-                "mistral",
-                null,
-                file.getOriginalFilename(),
-                userEmail,
-                result
-        );
-    }
+            Map<String, Object> result = fastApiClient.classify(request);
 
-    public Map<String, Object> ragStatus() {
-        return fastApiClient.ragStatus();
-    }
+            return save(
+                    "classification",
+                    request.getModel(),
+                    request.getText(),
+                    null,
+                    userEmail,
+                    result
+            );
+        }
 
-    public Page<AnalysisResult> getHistory(
-            String userEmail,
-            String analysisType,
-            String model,
-            Pageable pageable
-    ) {
-        if (analysisType != null && !analysisType.isBlank()
-                && model != null && !model.isBlank()) {
-            return repository.findByUserEmailAndAnalysisTypeAndModelOrderByCreatedAtDesc(
+        public AnalysisResult summarize(TextRequest request, String userEmail) {
+
+            log.info("User {} requested summarization", userEmail);
+
+            Map<String, Object> result = fastApiClient.summarize(request);
+
+            return save(
+                    "summarization",
+                    "mistral",
+                    request.getText(),
+                    null,
+                    userEmail,
+                    result
+            );
+        }
+
+        public AnalysisResult extract(TextRequest request, String userEmail) {
+
+            log.info("User {} requested extraction", userEmail);
+
+            Map<String, Object> result = fastApiClient.extract(request);
+
+            return save(
+                    "extraction",
+                    "mistral",
+                    request.getText(),
+                    null,
+                    userEmail,
+                    result
+            );
+        }
+
+        public AnalysisResult financialExtract(ModelTextRequest request, String userEmail) {
+
+            log.info(
+                    "User {} requested financial extraction using {}",
+                    userEmail,
+                    request.getModel()
+            );
+
+            Map<String, Object> result = fastApiClient.financialExtract(request);
+
+            return save(
+                    "financial_extraction",
+                    request.getModel(),
+                    request.getText(),
+                    null,
+                    userEmail,
+                    result
+            );
+        }
+
+        public AnalysisResult askDocument(QuestionRequest request, String userEmail) {
+
+            log.info("User {} asked a RAG question", userEmail);
+
+            Map<String, Object> result = fastApiClient.askDocument(request);
+
+            return save(
+                    "rag_qa",
+                    request.getModel(),
+                    request.getQuestion(),
+                    null,
+                    userEmail,
+                    result
+            );
+        }
+
+        public AnalysisResult financialPdfChunked(MultipartFile file, String userEmail) {
+
+            log.info(
+                    "User {} uploaded PDF {}",
+                    userEmail,
+                    file.getOriginalFilename()
+            );
+
+            Map<String, Object> result = fastApiClient.financialPdfChunked(file);
+
+            return save(
+                    "financial_pdf_chunked",
+                    "mistral",
+                    null,
+                    file.getOriginalFilename(),
+                    userEmail,
+                    result
+            );
+        }
+
+        public Map<String, Object> ragStatus() {
+            return fastApiClient.ragStatus();
+        }
+
+        public Page<AnalysisResult> getHistory(
+                String userEmail,
+                String analysisType,
+                String model,
+                Pageable pageable
+        ) {
+
+            log.info(
+                    "User {} requested history (analysisType={}, model={})",
                     userEmail,
                     analysisType,
-                    model,
-                    pageable
+                    model
             );
-        }
 
-        if (analysisType != null && !analysisType.isBlank()) {
-            return repository.findByUserEmailAndAnalysisTypeOrderByCreatedAtDesc(
+            if (analysisType != null && !analysisType.isBlank()
+                    && model != null && !model.isBlank()) {
+
+                return repository.findByUserEmailAndAnalysisTypeAndModelOrderByCreatedAtDesc(
+                        userEmail,
+                        analysisType,
+                        model,
+                        pageable
+                );
+            }
+
+            if (analysisType != null && !analysisType.isBlank()) {
+
+                return repository.findByUserEmailAndAnalysisTypeOrderByCreatedAtDesc(
+                        userEmail,
+                        analysisType,
+                        pageable
+                );
+            }
+
+            if (model != null && !model.isBlank()) {
+
+                return repository.findByUserEmailAndModelOrderByCreatedAtDesc(
+                        userEmail,
+                        model,
+                        pageable
+                );
+            }
+
+            return repository.findByUserEmailOrderByCreatedAtDesc(
                     userEmail,
-                    analysisType,
                     pageable
             );
         }
 
-        if (model != null && !model.isBlank()) {
-            return repository.findByUserEmailAndModelOrderByCreatedAtDesc(
-                    userEmail,
-                    model,
-                    pageable
-            );
+        public void deleteAnalysis(String id) {
+
+            log.info("Deleting analysis {}", id);
+
+            repository.deleteById(id);
         }
+        private AnalysisResult save(
+                String analysisType,
+                String model,
+                String inputText,
+                String filename,
+                String userEmail,
+                Map<String, Object> result
+        ) {
+            AnalysisResult analysisResult = new AnalysisResult();
 
-        return repository.findByUserEmailOrderByCreatedAtDesc(
-                userEmail,
-                pageable
-        );
+            analysisResult.setAnalysisType(analysisType);
+            analysisResult.setModel(model);
+            analysisResult.setInputText(inputText);
+            analysisResult.setFilename(filename);
+            analysisResult.setUserEmail(userEmail);
+            analysisResult.setResult(result);
+            analysisResult.setCreatedAt(LocalDateTime.now());
+
+            return repository.save(analysisResult);
+        }
     }
-
-    public void deleteAnalysis(String id) {
-        repository.deleteById(id);
-    }
-
-    private AnalysisResult save(
-            String analysisType,
-            String model,
-            String inputText,
-            String filename,
-            String userEmail,
-            Map<String, Object> result
-    ) {
-        AnalysisResult analysisResult = new AnalysisResult();
-
-        analysisResult.setAnalysisType(analysisType);
-        analysisResult.setModel(model);
-        analysisResult.setInputText(inputText);
-        analysisResult.setFilename(filename);
-        analysisResult.setUserEmail(userEmail);
-        analysisResult.setResult(result);
-        analysisResult.setCreatedAt(LocalDateTime.now());
-
-        return repository.save(analysisResult);
-    }
-}
