@@ -131,15 +131,4 @@ public class AnalysisController {
                 analysisResult.getCreatedAt()
         );
     }
-
-    @PostMapping(value = "/index-pdf", consumes = "multipart/form-data")
-    public Map<String, Object> indexPdf(
-            @RequestPart("file") MultipartFile file,
-            Authentication authentication
-    ) {
-        return analysisService.indexPdf(
-                file,
-                authentication.getName()
-        );
-    }
 }

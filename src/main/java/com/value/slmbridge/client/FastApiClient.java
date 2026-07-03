@@ -83,4 +83,28 @@ public class FastApiClient {
             throw new RuntimeException("Failed to send PDF to FastAPI", e);
         }
     }
+
+    public Map<String, Object> indexPdf(MultipartFile file) {
+        try {
+            MultipartBodyBuilder builder = new MultipartBodyBuilder();
+
+            builder.part("file", new ByteArrayResource(file.getBytes()) {
+                @Override
+                public String getFilename() {
+                    return file.getOriginalFilename();
+                }
+            });
+
+            return fastApiWebClient.post()
+                    .uri("/index-pdf")
+                    .contentType(MediaType.MULTIPART_FORM_DATA)
+                    .bodyValue(builder.build())
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .block();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to index PDF in FastAPI", e);
+        }
+    }
 }

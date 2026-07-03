@@ -219,14 +219,4 @@
 
             return repository.save(analysisResult);
         }
-
-        public Map<String, Object> indexPdf(MultipartFile file, String userEmail) {
-            log.info(
-                    "User {} indexed PDF {}",
-                    userEmail,
-                    file.getOriginalFilename()
-            );
-
-            return fastApiClient.indexPdf(file);
-        }
     }
