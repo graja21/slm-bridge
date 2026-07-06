@@ -1,39 +1,39 @@
-package com.value.slmbridge.exception;
+package com.value.slmbridge.config;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 
-//@RestControllerAdvice
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<?> handleRuntime(RuntimeException ex) {
+    public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
+        String message = ex.getMessage();
+
+        if (message == null || message.isBlank()) {
+            message = "Request failed.";
+        }
+
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+
+        if (message.toLowerCase().contains("verify your email")) {
+            status = HttpStatus.FORBIDDEN;
+        }
+
+        if (message.toLowerCase().contains("not found")) {
+            status = HttpStatus.NOT_FOUND;
+        }
+
+        if (message.toLowerCase().contains("expired")) {
+            status = HttpStatus.GONE;
+        }
 
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(Map.of(
-                        "timestamp", LocalDateTime.now(),
-                        "status", 400,
-                        "error", "Bad Request",
-                        "message", ex.getMessage()
-                ));
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> handleException(Exception ex) {
-
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of(
-                        "timestamp", LocalDateTime.now(),
-                        "status", 500,
-                        "error", "Internal Server Error",
-                        "message", ex.getMessage()
-                ));
+                .status(status)
+                .body(Map.of("message", message));
     }
 }

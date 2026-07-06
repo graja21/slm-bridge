@@ -41,35 +41,34 @@ public class AuthService {
     }
 
     public String register(RegisterRequest request) {
-        String email = normalizeEmail(request.getEmail());
 
-        if (userRepository.existsByEmail(email)) {
+        if (userRepository.existsByEmail(request.getEmail())) {
             throw new RuntimeException("Email already exists");
         }
 
         User user = new User();
-        user.setFullName(request.getFullName().trim());
-        user.setEmail(email);
+        user.setFullName(request.getFullName());
+        user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(Role.USER);
         user.setEmailVerified(false);
 
         userRepository.save(user);
 
-        tokenRepository.deleteByEmail(email);
+        tokenRepository.deleteByEmail(user.getEmail());
 
         String token = UUID.randomUUID().toString();
 
         EmailVerificationToken verificationToken = new EmailVerificationToken(
                 token,
-                email,
+                user.getEmail(),
                 LocalDateTime.now().plusHours(24)
         );
 
         tokenRepository.save(verificationToken);
 
         emailService.sendVerificationEmail(
-                email,
+                user.getEmail(),
                 user.getFullName(),
                 token
         );
@@ -82,14 +81,11 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("Invalid verification token"));
 
         if (verificationToken.getExpiresAt().isBefore(LocalDateTime.now())) {
-            tokenRepository.delete(verificationToken);
             throw new RuntimeException("Verification token expired");
         }
 
-        String email = normalizeEmail(verificationToken.getEmail());
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found for email: " + email));
+        User user = userRepository.findByEmail(verificationToken.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         user.setEmailVerified(true);
         userRepository.save(user);
@@ -100,16 +96,15 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        String email = normalizeEmail(request.getEmail());
 
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        email,
+                        request.getEmail(),
                         request.getPassword()
                 )
         );
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (!user.isEmailVerified()) {
@@ -130,7 +125,7 @@ public class AuthService {
     }
 
     public UserProfileResponse getCurrentUser(String email) {
-        User user = userRepository.findByEmail(normalizeEmail(email))
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         return new UserProfileResponse(
@@ -141,10 +136,10 @@ public class AuthService {
     }
 
     public UserProfileResponse updateProfile(String email, UpdateProfileRequest request) {
-        User user = userRepository.findByEmail(normalizeEmail(email))
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        user.setFullName(request.getFullName().trim());
+        user.setFullName(request.getFullName());
         userRepository.save(user);
 
         return new UserProfileResponse(
@@ -155,7 +150,7 @@ public class AuthService {
     }
 
     public String changePassword(String email, ChangePasswordRequest request) {
-        User user = userRepository.findByEmail(normalizeEmail(email))
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
@@ -166,9 +161,5 @@ public class AuthService {
         userRepository.save(user);
 
         return "Password changed successfully";
-    }
-
-    private String normalizeEmail(String email) {
-        return email == null ? "" : email.trim().toLowerCase();
     }
 }

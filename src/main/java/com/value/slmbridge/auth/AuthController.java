@@ -1,7 +1,10 @@
 package com.value.slmbridge.auth;
-import org.springframework.security.core.Authentication;
+
 import jakarta.validation.Valid;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -15,14 +18,26 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public AuthResponse register(@Valid @RequestBody RegisterRequest request) {
-        return authService.register(request);
+    public Map<String, String> register(@Valid @RequestBody RegisterRequest request) {
+        return Map.of(
+                "message",
+                authService.register(request)
+        );
+    }
+
+    @GetMapping("/verify-email")
+    public Map<String, String> verifyEmail(@RequestParam String token) {
+        return Map.of(
+                "message",
+                authService.verifyEmail(token)
+        );
     }
 
     @PostMapping("/login")
     public AuthResponse login(@Valid @RequestBody LoginRequest request) {
         return authService.login(request);
     }
+
     @GetMapping("/me")
     public UserProfileResponse me(Authentication authentication) {
         return authService.getCurrentUser(authentication.getName());
