@@ -38,6 +38,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
@@ -47,7 +48,6 @@ public class SecurityConfig {
                                 "/",
                                 "/auth/register",
                                 "/auth/login",
-                                "/auth/verify-email",
 
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
@@ -73,6 +73,7 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(List.of(
@@ -109,6 +110,7 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
+
         DaoAuthenticationProvider authProvider =
                 new DaoAuthenticationProvider(userDetailsService);
 
